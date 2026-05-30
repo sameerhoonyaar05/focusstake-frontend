@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '../supabaseClient';
 
 function ProfilePage({ user, setCurrentPage, theme, setTheme }) {
