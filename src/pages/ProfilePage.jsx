@@ -15,7 +15,7 @@ function ProfilePage({ user, setCurrentPage, theme, setTheme }) {
     { name: 'Dark Brown', value: 'brown', bg: 'bg-amber-900', text: 'text-amber-50' }
   ];
 
-  useEffect(() => {
+  //useEffect(() => {
     if (user?.id) {
       fetchTaskHistory();
     }

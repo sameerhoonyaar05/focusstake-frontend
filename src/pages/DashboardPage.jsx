@@ -41,7 +41,7 @@ function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, s
     return Math.max(1, Math.ceil(sec / 60));
   };
 
-  useEffect(() => {
+ // useEffect(() => {
     if (user?.id) {
       fetchTasks();
       fetchCharityDonated();
