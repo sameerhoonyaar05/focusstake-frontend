@@ -3,140 +3,92 @@ import { supabase } from './supabaseClient';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import AdminPage from './pages/AdminPage';
-import ProfilePage from './pages/ProfilePage';
 import PaymentPage from './pages/PaymentPage';
 import TimerPage from './pages/TimerPage';
 import ProofPage from './pages/ProofPage';
+import ProfilePage from './pages/ProfilePage';
 
 function App() {
-  const [user, setUser] = useState(null);
   const [currentPage, setCurrentPage] = useState('login');
-  const [theme, setTheme] = useState('light');
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
   const [currentTask, setCurrentTask] = useState(null);
+  const [theme, setTheme] = useState('light');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkUser();
-  }, []);
+    const checkUser = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        if (data?.session?.user) {
+          setUser(data.session.user);
+          setCurrentPage('dashboard');
+        } else {
+          setCurrentPage('login');
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        setCurrentPage('login');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const checkUser = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        setUser(user);
+    checkUser();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        setUser(session.user);
         setCurrentPage('dashboard');
-        // Check if admin
-        checkAdmin(user.id);
       } else {
+        setUser(null);
         setCurrentPage('login');
       }
-    } catch (error) {
-      console.error('Error checking user:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    });
 
-  const checkAdmin = async (userId) => {
-    // For now, you can manually set admin status
-    // Later, add admin field to users table
-    setIsAdmin(false); // Change to true for testing admin panel
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setCurrentPage('login');
-  };
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-600 to-blue-600">
-        <div className="text-white text-2xl">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-purple-600">
+        <p className="text-white text-xl">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600">
-      {/* Navigation */}
-      {user && (
-        <nav className="bg-gray-900 text-white p-4 flex justify-between items-center shadow-lg">
-          <h1 className="text-2xl font-bold">🎯 FocusStake</h1>
-          <div className="flex gap-4 items-center">
-            <span className="text-sm opacity-75">{user.email}</span>
-            {isAdmin && (
-              <button 
-                onClick={() => setCurrentPage('admin')}
-                className="px-4 py-2 bg-red-600 rounded hover:bg-red-700 transition"
-              >
-                🔧 Admin Panel
-              </button>
-            )}
-            <button 
-              onClick={() => setCurrentPage('dashboard')}
-              className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 transition"
-            >
-              Dashboard
-            </button>
-            <button 
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-500 rounded hover:bg-red-600 transition"
-            >
-              Logout
-            </button>
-          </div>
-        </nav>
+    <div>
+      {currentPage === 'login' && (
+        <LoginPage setUser={setUser} setCurrentPage={setCurrentPage} />
       )}
-
-      {/* Pages */}
-      <div className="container mx-auto p-4 min-h-[calc(100vh-80px)]">
-        {currentPage === 'login' && (
-          <LoginPage setUser={setUser} setCurrentPage={setCurrentPage} />
-        )}
-        
-        {currentPage === 'dashboard' && user && (
-          <DashboardPage 
-            user={user} 
-            setCurrentPage={setCurrentPage}
-            setCurrentTask={setCurrentTask}
-          />
-        )}
-
-        {currentPage === 'payment' && user && currentTask && (
-          <PaymentPage 
-            user={user}
-            task={currentTask}
-            setCurrentPage={setCurrentPage}
-            setCurrentTask={setCurrentTask}
-          />
-        )}
-
-        {currentPage === 'timer' && user && currentTask && (
-          <TimerPage 
-            user={user}
-            task={currentTask}
-            setCurrentPage={setCurrentPage}
-          />
-        )}
-
-        {currentPage === 'proof' && user && currentTask && (
-          <ProofPage 
-            user={user}
-            task={currentTask}
-            setCurrentPage={setCurrentPage}
-          />
-        )}
-
-        {currentPage === 'admin' && (
-  <AdminPage setCurrentPage={setCurrentPage} />
-)}  
-        {currentPage === 'profile' && (
-  <ProfilePage user={user} setCurrentPage={setCurrentPage} theme={theme} setTheme={setTheme} />
-)}
-      </div>
+      {currentPage === 'dashboard' && user && (
+        <DashboardPage 
+          user={user} 
+          setCurrentPage={setCurrentPage}
+          setCurrentTask={setCurrentTask}
+          setUser={setUser}
+          theme={theme}
+          setTheme={setTheme}
+        />
+      )}
+      {currentPage === 'payment' && user && currentTask && (
+        <PaymentPage user={user} task={currentTask} setCurrentPage={setCurrentPage} setCurrentTask={setCurrentTask} />
+      )}
+      {currentPage === 'timer' && user && currentTask && (
+        <TimerPage user={user} task={currentTask} setCurrentPage={setCurrentPage} />
+      )}
+      {currentPage === 'proof' && user && currentTask && (
+        <ProofPage user={user} task={currentTask} setCurrentPage={setCurrentPage} />
+      )}
+      {currentPage === 'admin' && (
+        <AdminPage setCurrentPage={setCurrentPage} />
+      )}
+      {currentPage === 'profile' && user && (
+        <ProfilePage user={user} setCurrentPage={setCurrentPage} theme={theme} setTheme={setTheme} />
+      )}
     </div>
   );
 }
