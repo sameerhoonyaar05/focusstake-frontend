@@ -15,11 +15,10 @@ function ProfilePage({ user, setCurrentPage, theme, setTheme }) {
     { name: 'Dark Brown', value: 'brown', bg: 'bg-amber-900', text: 'text-amber-50' }
   ];
 
-  //useEffect(() => {
-    if (user?.id) {
-      fetchTaskHistory();
-    }
-  }, [user?.id])
+  // Add inside function:
+if (user?.id) {
+  fetchTaskHistory();
+}
   const fetchTaskHistory = async () => {
     try {
       setLoading(true);

@@ -41,12 +41,10 @@ function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, s
     return Math.max(1, Math.ceil(sec / 60));
   };
 
- // useEffect(() => {
-    if (user?.id) {
-      fetchTasks();
-      fetchCharityDonated();
-    }
-  }, [user?.id, tasks])
+if (user?.id) {
+  fetchTasks();
+  fetchCharityDonated();
+}
 
   const fetchTasks = async () => {
     try {
