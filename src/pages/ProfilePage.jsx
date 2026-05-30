@@ -1,3 +1,4 @@
+cat > /mnt/user-data/outputs/ProfilePage_FIXED_HOOKS.jsx << 'EOF'
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
@@ -16,8 +17,10 @@ function ProfilePage({ user, setCurrentPage, theme, setTheme }) {
   ];
 
   useEffect(() => {
-    fetchTaskHistory();
-  }, [user]);
+    if (user?.id) {
+      fetchTaskHistory();
+    }
+  }, [user?.id]);
 
   const fetchTaskHistory = async () => {
     try {
@@ -71,7 +74,6 @@ function ProfilePage({ user, setCurrentPage, theme, setTheme }) {
   return (
     <div className={`min-h-screen ${current?.bg} ${current?.text}`}>
       
-      {/* Header */}
       <div className={`${current?.value === 'light' ? 'bg-gray-900 text-white' : current?.bg} p-4`}>
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <button
@@ -87,11 +89,9 @@ function ProfilePage({ user, setCurrentPage, theme, setTheme }) {
 
       <div className="max-w-4xl mx-auto p-6">
         
-        {/* User Info Card */}
         <div className={`rounded-lg p-8 mb-6 ${current?.value === 'light' ? 'bg-gray-50' : current?.value === 'dark' ? 'bg-gray-800' : ''}`}>
           <div className="grid grid-cols-2 gap-8">
             
-            {/* Name Edit */}
             <div>
               <p className="text-sm opacity-70 mb-2">Display Name</p>
               {editingName ? (
@@ -122,7 +122,6 @@ function ProfilePage({ user, setCurrentPage, theme, setTheme }) {
               )}
             </div>
 
-            {/* Email */}
             <div>
               <p className="text-sm opacity-70 mb-2">Email</p>
               <p className="text-2xl font-bold break-all">{user?.email}</p>
@@ -130,7 +129,6 @@ function ProfilePage({ user, setCurrentPage, theme, setTheme }) {
           </div>
         </div>
 
-        {/* Theme Selector */}
         <div className={`rounded-lg p-6 mb-6 ${current?.value === 'light' ? 'bg-gray-50' : current?.value === 'dark' ? 'bg-gray-800' : ''}`}>
           <h2 className="text-xl font-bold mb-4">🎨 Theme Selection</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -152,7 +150,6 @@ function ProfilePage({ user, setCurrentPage, theme, setTheme }) {
           </div>
         </div>
 
-        {/* Help Section */}
         <div className={`rounded-lg p-6 mb-6 ${current?.value === 'light' ? 'bg-blue-50 border-l-4 border-blue-500' : current?.value === 'dark' ? 'bg-blue-900 border-l-4 border-blue-400' : ''}`}>
           <h2 className="text-xl font-bold mb-4">❓ Help & Support</h2>
           <button
@@ -171,7 +168,6 @@ function ProfilePage({ user, setCurrentPage, theme, setTheme }) {
           )}
         </div>
 
-        {/* Task History */}
         <div className={`rounded-lg p-6 ${current?.value === 'light' ? 'bg-gray-50' : current?.value === 'dark' ? 'bg-gray-800' : ''}`}>
           <h2 className="text-xl font-bold mb-4">📋 Task History (Last 1 Year)</h2>
           
@@ -203,3 +199,5 @@ function ProfilePage({ user, setCurrentPage, theme, setTheme }) {
 }
 
 export default ProfilePage;
+EOF
+echo "✅ ProfilePage_FIXED_HOOKS.jsx created!"
