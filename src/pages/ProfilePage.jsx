@@ -19,8 +19,7 @@ function ProfilePage({ user, setCurrentPage, theme, setTheme }) {
     if (user?.id) {
       fetchTaskHistory();
     }
-  }, [user?.id]);
-
+  }, [user?.id])
   const fetchTaskHistory = async () => {
     try {
       setLoading(true);

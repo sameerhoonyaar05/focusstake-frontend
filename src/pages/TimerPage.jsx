@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
+
 
 function TimerPage({ user, task, setCurrentPage }) {
   const [timeLeft, setTimeLeft] = useState(task?.duration_seconds || 0);

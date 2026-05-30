@@ -46,7 +46,7 @@ function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, s
       fetchTasks();
       fetchCharityDonated();
     }
-  }, [user?.id]);
+  }, [user?.id, tasks])
 
   const fetchTasks = async () => {
     try {
