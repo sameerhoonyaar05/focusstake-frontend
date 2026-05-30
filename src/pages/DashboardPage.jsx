@@ -1,3 +1,4 @@
+at > /mnt/user-data/outputs/DashboardPage_FIXED_HOOKS.jsx << 'EOF'
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 
@@ -42,9 +43,11 @@ function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, s
   };
 
   useEffect(() => {
-    fetchTasks();
-    fetchCharityDonated();
-  }, [user]);
+    if (user?.id) {
+      fetchTasks();
+      fetchCharityDonated();
+    }
+  }, [user?.id]);
 
   const fetchTasks = async () => {
     try {
@@ -173,7 +176,6 @@ function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, s
     }
   };
 
-  // Pagination
   const totalPages = Math.ceil(tasks.length / TASKS_PER_PAGE);
   const startIdx = (taskPage - 1) * TASKS_PER_PAGE;
   const paginatedTasks = tasks.slice(startIdx, startIdx + TASKS_PER_PAGE);
@@ -181,7 +183,6 @@ function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, s
   return (
     <div className={`min-h-screen ${currentTheme.bg} ${currentTheme.text}`}>
       
-      {/* Header */}
       <div className={theme === 'light' ? 'bg-gray-900 text-white' : currentTheme.bg}>
         <div className="max-w-4xl mx-auto flex justify-between items-center p-4">
           <div className="flex items-center gap-2">
@@ -207,16 +208,13 @@ function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, s
 
       <div className="max-w-4xl mx-auto mt-6 px-4 pb-10">
         
-        {/* Charity Circle (Top-Left) */}
         <div className={`w-32 h-32 rounded-full flex flex-col items-center justify-center mb-8 ${theme === 'light' ? 'bg-green-500 text-white' : 'bg-green-600 text-white'} shadow-lg`}>
           <p className="text-sm opacity-90">Charity Impact</p>
           <p className="text-3xl font-bold">₹{charityDonated}</p>
         </div>
 
-        {/* Main Content */}
         <div className={`${currentTheme.card} rounded-lg shadow-lg p-8 mb-8`}>
           
-          {/* Header with buttons */}
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold">Active Tasks</h1>
             <div className="flex gap-3">
@@ -235,7 +233,6 @@ function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, s
             </div>
           </div>
 
-          {/* Create Form */}
           {showCreateForm && (
             <form onSubmit={handleCreateTask} className={`${theme === 'light' ? 'bg-purple-100' : 'bg-gray-700'} p-6 rounded-lg mb-6 space-y-4`}>
               <div>
@@ -343,7 +340,6 @@ function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, s
             </form>
           )}
 
-          {/* Task List */}
           {tasks.length === 0 ? (
             <div className="text-center py-12 opacity-70">
               <p className="text-lg">No tasks yet. Create your first task!</p>
@@ -404,7 +400,6 @@ function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, s
                 ))}
               </div>
 
-              {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex justify-center gap-2">
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -433,3 +428,5 @@ function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, s
 }
 
 export default DashboardPage;
+EOF
+echo "✅ DashboardPage_FIXED_HOOKS.jsx created!"
