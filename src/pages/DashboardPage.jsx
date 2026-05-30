@@ -1,4 +1,3 @@
-at > /mnt/user-data/outputs/DashboardPage_FIXED_HOOKS.jsx << 'EOF'
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 
@@ -25,7 +24,7 @@ function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, s
     dark: { bg: 'bg-gray-900', text: 'text-white', card: 'bg-gray-800', border: 'border-gray-700' },
     light: { bg: 'bg-purple-600', text: 'text-gray-900', card: 'bg-white', border: 'border-gray-300' },
     pink: { bg: 'bg-pink-100', text: 'text-pink-900', card: 'bg-pink-50', border: 'border-pink-300' },
-    brown: { bg: 'bg-amber-900', text: 'text-amber-50', card: 'bg-amber-800', border: 'border-amber-700' },
+    brown: { bg: 'bg-amber-900', text: 'text-amber-50', card: 'bg-amber-800', border: 'border-amber-700' }
   };
 
   const currentTheme = themes[theme] || themes.light;
@@ -100,7 +99,7 @@ function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, s
           stake_amount: parseFloat(stakeAmount),
           duration_minutes: durationMinutes,
           duration_seconds: durationSeconds,
-          status: 'pending',
+          status: 'pending'
         }])
         .select();
 
@@ -111,7 +110,7 @@ function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, s
       await supabase.from('payments').insert([{
         task_id: newTask.id,
         user_id: user.id,
-        status: 'pending',
+        status: 'pending'
       }]);
 
       setTasks([newTask, ...tasks]);
@@ -146,7 +145,7 @@ function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, s
       await supabase.from('tasks').delete().eq('id', taskId);
       setTasks(tasks.filter(t => t.id !== taskId));
       setLongPressTaskId(null);
-      alert('✅ Task deleted!');
+      alert('Task deleted!');
     } catch (error) {
       console.error('Error deleting task:', error);
       alert('Error: ' + error.message);
@@ -182,7 +181,6 @@ function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, s
 
   return (
     <div className={`min-h-screen ${currentTheme.bg} ${currentTheme.text}`}>
-      
       <div className={theme === 'light' ? 'bg-gray-900 text-white' : currentTheme.bg}>
         <div className="max-w-4xl mx-auto flex justify-between items-center p-4">
           <div className="flex items-center gap-2">
@@ -190,232 +188,89 @@ function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, s
             <h1 className="text-2xl font-bold">FocusStake</h1>
           </div>
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => setCurrentPage('profile')}
-              className={`px-4 py-2 rounded font-bold ${theme === 'light' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
-            >
-              👤 Profile
-            </button>
-            <button
-              onClick={handleLogout}
-              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 font-bold"
-            >
-              Logout
-            </button>
+            <button onClick={() => setCurrentPage('profile')} className="px-4 py-2 rounded font-bold bg-blue-600 text-white hover:bg-blue-700">👤 Profile</button>
+            <button onClick={handleLogout} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 font-bold">Logout</button>
           </div>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto mt-6 px-4 pb-10">
-        
-        <div className={`w-32 h-32 rounded-full flex flex-col items-center justify-center mb-8 ${theme === 'light' ? 'bg-green-500 text-white' : 'bg-green-600 text-white'} shadow-lg`}>
+        <div className={`w-32 h-32 rounded-full flex flex-col items-center justify-center mb-8 shadow-lg ${theme === 'light' ? 'bg-green-500 text-white' : 'bg-green-600 text-white'}`}>
           <p className="text-sm opacity-90">Charity Impact</p>
           <p className="text-3xl font-bold">₹{charityDonated}</p>
         </div>
 
         <div className={`${currentTheme.card} rounded-lg shadow-lg p-8 mb-8`}>
-          
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold">Active Tasks</h1>
             <div className="flex gap-3">
-              <button
-                onClick={() => setCurrentPage('admin')}
-                className="bg-red-600 text-white px-6 py-3 rounded hover:bg-red-700 transition font-bold"
-              >
-                🛡️ Admin
-              </button>
-              <button
-                onClick={() => setShowCreateForm(!showCreateForm)}
-                className="bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 transition font-bold"
-              >
-                {showCreateForm ? '❌ Cancel' : '➕ New Task'}
-              </button>
+              <button onClick={() => setCurrentPage('admin')} className="bg-red-600 text-white px-6 py-3 rounded hover:bg-red-700 font-bold">Admin</button>
+              <button onClick={() => setShowCreateForm(!showCreateForm)} className="bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 font-bold">{showCreateForm ? 'Cancel' : 'New Task'}</button>
             </div>
           </div>
 
           {showCreateForm && (
-            <form onSubmit={handleCreateTask} className={`${theme === 'light' ? 'bg-purple-100' : 'bg-gray-700'} p-6 rounded-lg mb-6 space-y-4`}>
+            <form onSubmit={handleCreateTask} className={`p-6 rounded-lg mb-6 space-y-4 ${theme === 'light' ? 'bg-purple-100' : 'bg-gray-700'}`}>
               <div>
                 <label className="block text-sm font-medium mb-2">Task Description</label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Example: Study Python for 1 hour, complete 5 assignments, no phone distractions"
-                  className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500 ${theme === 'light' ? 'bg-white text-gray-900' : `${currentTheme.card} ${currentTheme.text}`}`}
-                  rows="3"
-                  required
-                />
+                <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe your task" className={`w-full px-4 py-2 border rounded ${theme === 'light' ? 'bg-white text-gray-900' : `${currentTheme.card} ${currentTheme.text}`}`} rows="3" required />
               </div>
-
               <div>
                 <label className="block text-sm font-medium mb-2">Stake Amount (₹)</label>
-                <input
-                  type="number"
-                  min="15"
-                  value={stakeAmount}
-                  onChange={(e) => setStakeAmount(e.target.value)}
-                  className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500 ${theme === 'light' ? 'bg-white text-gray-900' : `${currentTheme.card} ${currentTheme.text}`}`}
-                  required
-                />
+                <input type="number" min="15" value={stakeAmount} onChange={(e) => setStakeAmount(e.target.value)} className={`w-full px-4 py-2 border rounded ${theme === 'light' ? 'bg-white text-gray-900' : `${currentTheme.card} ${currentTheme.text}`}`} required />
               </div>
-
               <div>
                 <label className="block text-sm font-medium mb-3">Duration</label>
                 <div className="flex gap-3 mb-4">
-                  <button
-                    type="button"
-                    onClick={() => setUseCustomTime(false)}
-                    className={`px-4 py-2 rounded font-medium ${!useCustomTime ? 'bg-blue-600 text-white' : theme === 'light' ? 'bg-purple-300' : 'bg-gray-600'}`}
-                  >
-                    Preset
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setUseCustomTime(true)}
-                    className={`px-4 py-2 rounded font-medium ${useCustomTime ? 'bg-blue-600 text-white' : theme === 'light' ? 'bg-purple-300' : 'bg-gray-600'}`}
-                  >
-                    Custom
-                  </button>
+                  <button type="button" onClick={() => setUseCustomTime(false)} className={`px-4 py-2 rounded font-medium ${!useCustomTime ? 'bg-blue-600 text-white' : theme === 'light' ? 'bg-purple-300' : 'bg-gray-600'}`}>Preset</button>
+                  <button type="button" onClick={() => setUseCustomTime(true)} className={`px-4 py-2 rounded font-medium ${useCustomTime ? 'bg-blue-600 text-white' : theme === 'light' ? 'bg-purple-300' : 'bg-gray-600'}`}>Custom</button>
                 </div>
-
                 {!useCustomTime && (
-                  <select
-                    value={presetDuration}
-                    onChange={(e) => setPresetDuration(e.target.value)}
-                    className={`w-full px-4 py-2 border rounded ${theme === 'light' ? 'bg-white text-gray-900' : `${currentTheme.card} ${currentTheme.text}`}`}
-                  >
-                    <option value="1">1 Min (Test)</option>
+                  <select value={presetDuration} onChange={(e) => setPresetDuration(e.target.value)} className={`w-full px-4 py-2 border rounded ${theme === 'light' ? 'bg-white text-gray-900' : `${currentTheme.card} ${currentTheme.text}`}`}>
+                    <option value="1">1 Min</option>
                     <option value="60">1 Hour</option>
                     <option value="120">2 Hours</option>
                     <option value="180">3 Hours</option>
                   </select>
                 )}
-
                 {useCustomTime && (
                   <div className="flex gap-3">
-                    <div className="flex-1">
-                      <label className="block text-xs mb-1 text-center">Hours</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="23"
-                        value={customHours}
-                        onChange={(e) => setCustomHours(parseInt(e.target.value) || 0)}
-                        className={`w-full px-3 py-2 border rounded text-center ${theme === 'light' ? 'bg-white text-gray-900' : `${currentTheme.card} ${currentTheme.text}`}`}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="block text-xs mb-1 text-center">Minutes</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="59"
-                        value={customMinutes}
-                        onChange={(e) => setCustomMinutes(parseInt(e.target.value) || 0)}
-                        className={`w-full px-3 py-2 border rounded text-center ${theme === 'light' ? 'bg-white text-gray-900' : `${currentTheme.card} ${currentTheme.text}`}`}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="block text-xs mb-1 text-center">Seconds</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="59"
-                        value={customSeconds}
-                        onChange={(e) => setCustomSeconds(parseInt(e.target.value) || 0)}
-                        className={`w-full px-3 py-2 border rounded text-center ${theme === 'light' ? 'bg-white text-gray-900' : `${currentTheme.card} ${currentTheme.text}`}`}
-                      />
-                    </div>
+                    <input type="number" min="0" max="23" value={customHours} onChange={(e) => setCustomHours(parseInt(e.target.value) || 0)} placeholder="Hours" className={`flex-1 px-3 py-2 border rounded text-center ${theme === 'light' ? 'bg-white text-gray-900' : `${currentTheme.card} ${currentTheme.text}`}`} />
+                    <input type="number" min="0" max="59" value={customMinutes} onChange={(e) => setCustomMinutes(parseInt(e.target.value) || 0)} placeholder="Minutes" className={`flex-1 px-3 py-2 border rounded text-center ${theme === 'light' ? 'bg-white text-gray-900' : `${currentTheme.card} ${currentTheme.text}`}`} />
+                    <input type="number" min="0" max="59" value={customSeconds} onChange={(e) => setCustomSeconds(parseInt(e.target.value) || 0)} placeholder="Seconds" className={`flex-1 px-3 py-2 border rounded text-center ${theme === 'light' ? 'bg-white text-gray-900' : `${currentTheme.card} ${currentTheme.text}`}`} />
                   </div>
                 )}
               </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-green-600 text-white py-3 rounded font-bold hover:bg-green-700 disabled:opacity-50"
-              >
-                {loading ? 'Creating...' : '🚀 Create Task'}
-              </button>
+              <button type="submit" disabled={loading} className="w-full bg-green-600 text-white py-3 rounded font-bold hover:bg-green-700 disabled:opacity-50">{loading ? 'Creating...' : 'Create Task'}</button>
             </form>
           )}
 
           {tasks.length === 0 ? (
-            <div className="text-center py-12 opacity-70">
-              <p className="text-lg">No tasks yet. Create your first task!</p>
-            </div>
+            <div className="text-center py-12 opacity-70"><p className="text-lg">No tasks yet</p></div>
           ) : (
             <>
               <div className="space-y-4 mb-6">
                 {paginatedTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    onMouseDown={() => handleLongPressStart(task.id)}
-                    onMouseUp={handleLongPressEnd}
-                    onTouchStart={() => handleLongPressStart(task.id)}
-                    onTouchEnd={handleLongPressEnd}
-                    className={`border rounded-lg p-4 hover:shadow-lg transition ${currentTheme.border} ${theme === 'light' ? 'bg-white' : ''}`}
-                  >
+                  <div key={task.id} onMouseDown={() => handleLongPressStart(task.id)} onMouseUp={handleLongPressEnd} onTouchStart={() => handleLongPressStart(task.id)} onTouchEnd={handleLongPressEnd} className={`border rounded-lg p-4 hover:shadow-lg transition ${currentTheme.border} ${theme === 'light' ? 'bg-white' : ''}`}>
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
                         <h3 className="font-bold text-lg">{task.description}</h3>
-                        <p className={`text-sm ${theme === 'light' ? 'text-purple-600' : 'opacity-70'}`}>
-                          ₹{task.stake_amount} • {task.duration_minutes} mins
-                        </p>
+                        <p className={`text-sm ${theme === 'light' ? 'text-purple-600' : 'opacity-70'}`}>₹{task.stake_amount} • {task.duration_minutes} mins</p>
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(task.status)}`}>
-                        {task.status.toUpperCase()}
-                      </span>
+                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(task.status)}`}>{task.status.toUpperCase()}</span>
                     </div>
-
                     <div className="flex gap-2">
-                      {task.status === 'pending' && (
-                        <button
-                          onClick={() => { setCurrentTask(task); setCurrentPage('payment'); }}
-                          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
-                        >
-                          💳 Payment
-                        </button>
-                      )}
-                      {task.status === 'active' && (
-                        <button
-                          onClick={() => { setCurrentTask(task); setCurrentPage('timer'); }}
-                          className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 text-sm"
-                        >
-                          ⏱️ Timer
-                        </button>
-                      )}
-                      
-                      {longPressTaskId === task.id && (
-                        <button
-                          onClick={() => handleDeleteTask(task.id)}
-                          disabled={deletingTaskId === task.id}
-                          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50 text-sm"
-                        >
-                          {deletingTaskId === task.id ? '⏳' : '🗑️ Delete'}
-                        </button>
-                      )}
+                      {task.status === 'pending' && <button onClick={() => { setCurrentTask(task); setCurrentPage('payment'); }} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">Payment</button>}
+                      {task.status === 'active' && <button onClick={() => { setCurrentTask(task); setCurrentPage('timer'); }} className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 text-sm">Timer</button>}
+                      {longPressTaskId === task.id && <button onClick={() => handleDeleteTask(task.id)} disabled={deletingTaskId === task.id} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50 text-sm">{deletingTaskId === task.id ? 'Deleting...' : 'Delete'}</button>}
                     </div>
                   </div>
                 ))}
               </div>
-
               {totalPages > 1 && (
                 <div className="flex justify-center gap-2">
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => setTaskPage(page)}
-                      className={`px-4 py-2 rounded ${
-                        taskPage === page
-                          ? 'bg-blue-600 text-white font-bold'
-                          : theme === 'light'
-                          ? 'bg-purple-200 text-purple-900'
-                          : 'bg-gray-700'
-                      }`}
-                    >
-                      {page}
-                    </button>
+                    <button key={page} onClick={() => setTaskPage(page)} className={`px-4 py-2 rounded ${taskPage === page ? 'bg-blue-600 text-white font-bold' : theme === 'light' ? 'bg-purple-200 text-purple-900' : 'bg-gray-700'}`}>{page}</button>
                   ))}
                 </div>
               )}
@@ -428,5 +283,3 @@ function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, s
 }
 
 export default DashboardPage;
-EOF
-echo "✅ DashboardPage_FIXED_HOOKS.jsx created!"
