@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
 function ProfilePage({ user, setCurrentPage, theme, setTheme }) {
@@ -16,9 +16,12 @@ function ProfilePage({ user, setCurrentPage, theme, setTheme }) {
   ];
 
   // Add inside function:
-if (user?.id) {
-  fetchTaskHistory();
-}
+useEffect(() => {
+  if (user?.id) {
+    fetchTaskHistory();
+  }
+}, [user?.id]);
+
   const fetchTaskHistory = async () => {
     try {
       setLoading(true);

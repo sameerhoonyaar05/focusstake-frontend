@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 
 function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, setTheme }) {
@@ -41,10 +41,12 @@ function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, s
     return Math.max(1, Math.ceil(sec / 60));
   };
 
-if (user?.id) {
-  fetchTasks();
-  fetchCharityDonated();
-}
+useEffect(() => {
+  if (user?.id) {
+    fetchTasks();
+    fetchCharityDonated();
+  }
+}, [user?.id]);
 
   const fetchTasks = async () => {
     try {
