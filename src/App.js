@@ -21,7 +21,13 @@ function App() {
         const { data, error } = await supabase.auth.getSession();
         if (error) throw error;
         if (data?.session?.user) {
-          setUser(data.session.user);
+          // Users table se poora data fetch karo (is_admin bhi)
+          const { data: userData } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', data.session.user.id)
+            .single();
+          setUser({ ...data.session.user, ...userData });
           setCurrentPage('dashboard');
         } else {
           setCurrentPage('login');
@@ -38,7 +44,13 @@ function App() {
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        setUser(session.user);
+        // Users table se poora data fetch karo
+        const { data: userData } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        setUser({ ...session.user, ...userData });
         setCurrentPage('dashboard');
       } else {
         setUser(null);
