@@ -42,7 +42,7 @@ function App() {
 
     checkUser();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session) {
         // Users table se poora data fetch karo
         const { data: userData } = await supabase
