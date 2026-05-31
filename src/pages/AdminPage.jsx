@@ -28,28 +28,38 @@ function AdminPage({ setCurrentPage }) {
   };
 
   const handleApprove = async (taskId, userId, stakeAmount) => {
-    try {
-      const refundAmount = stakeAmount - 1;
+  try {
+    const refundAmount = stakeAmount - 1;
 
-      await supabase
-        .from('tasks')
-        .update({ status: 'approved' })
-        .eq('id', taskId);
+    // Update task status
+    const { error: updateError } = await supabase
+      .from('tasks')
+      .update({ status: 'approved' })
+      .eq('id', taskId);
+    
+    if (updateError) throw updateError;
 
-      await supabase.from('payments').insert([{
+    // Insert refund record
+    const { error: paymentError } = await supabase
+      .from('payments')
+      .insert([{
         task_id: taskId,
         user_id: userId,
         status: 'refunded',
         amount: refundAmount
       }]);
+    
+    if (paymentError) throw paymentError;
 
-      setPendingTasks(pendingTasks.filter(t => t.id !== taskId));
-      alert('Task approved! Refund initiated.');
-    } catch (error) {
-      console.error('Error approving task:', error);
-      alert('Error: ' + error.message);
-    }
-  };
+    // UI se seedha hata do
+    setPendingTasks(prev => prev.filter(t => t.id !== taskId));
+    
+    alert('Task approved! Refund initiated. ₹' + refundAmount + ' manually transfer karo user ko.');
+  } catch (error) {
+    console.error('Error approving task:', error);
+    alert('Error: ' + error.message);
+  }
+};
 
   const handleReject = async (taskId, userId, stakeAmount) => {
     try {
