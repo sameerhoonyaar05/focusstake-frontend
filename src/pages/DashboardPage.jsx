@@ -204,7 +204,7 @@ useEffect(() => {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold">Active Tasks</h1>
             <div className="flex gap-3">
-              <button onClick={() => setCurrentPage('admin')} className="bg-red-600 text-white px-6 py-3 rounded hover:bg-red-700 font-bold">Admin</button>
+              {user?.is_admin && <button onClick={() => setCurrentPage('admin')} className="bg-red-600 text-white px-6 py-3 rounded hover:bg-red-700 font-bold">Admin</button>}
               <button onClick={() => setShowCreateForm(!showCreateForm)} className="bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 font-bold">{showCreateForm ? 'Cancel' : 'New Task'}</button>
             </div>
           </div>
