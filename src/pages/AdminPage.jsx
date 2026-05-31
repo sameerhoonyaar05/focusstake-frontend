@@ -31,15 +31,14 @@ function AdminPage({ setCurrentPage }) {
   try {
     const refundAmount = stakeAmount - 1;
 
-    // Update task status
+    // Step 1: Task status update karo
     const { error: updateError } = await supabase
       .from('tasks')
       .update({ status: 'approved' })
       .eq('id', taskId);
-    
     if (updateError) throw updateError;
 
-    // Insert refund record
+    // Step 2: Payment record insert karo
     const { error: paymentError } = await supabase
       .from('payments')
       .insert([{
@@ -48,13 +47,31 @@ function AdminPage({ setCurrentPage }) {
         status: 'refunded',
         amount: refundAmount
       }]);
-    
     if (paymentError) throw paymentError;
 
-    // UI se seedha hata do
+    // Step 3: User ka UPI ID fetch karo
+    const { data: userData } = await supabase
+      .from('users')
+      .select('upi_id, name')
+      .eq('id', userId)
+      .single();
+
+    const upiId = userData?.upi_id;
+    const userName = userData?.name;
+
+    // Step 4: UI se hata do
     setPendingTasks(prev => prev.filter(t => t.id !== taskId));
-    
-    alert('Task approved! Refund initiated. ₹' + refundAmount + ' manually transfer karo user ko.');
+
+    // Step 5: UPI Payment apps open karo
+    if (upiId) {
+      const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(userName)}&am=${refundAmount}&cu=INR&tn=FocusStake+Refund`;
+      
+      // UPI app open karo
+      window.location.href = upiUrl;
+    } else {
+      alert(`Task approved! ✅\nUser ka UPI ID nahi mila.\nManually ₹${refundAmount} bhejo.`);
+    }
+
   } catch (error) {
     console.error('Error approving task:', error);
     alert('Error: ' + error.message);
