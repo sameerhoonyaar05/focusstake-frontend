@@ -28,45 +28,83 @@ function AdminPage({ setCurrentPage }) {
   };
 
   const handleApprove = async (taskId, userId, stakeAmount) => {
-  try {
-    const refundAmount = stakeAmount - 1;
+    try {
+      const refundAmount = stakeAmount - 1;
 
-    // Insert refund record
-    const { error: paymentError } = await supabase
-      .from('payments')
-      .insert([{
+      // 1. Insert refund record in payments
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .insert([{
+          task_id: taskId,
+          user_id: userId,
+          status: 'refunded',
+          amount: refundAmount
+        }]);
+      
+      if (paymentError) throw paymentError;
+
+      // 2. Task ka status 'approved' update karna
+      const { error: updateError } = await supabase
+        .from('tasks')
+        .update({ status: 'approved' }) 
+        .eq('id', taskId);
+        
+      if (updateError) throw updateError;
+
+      // 3. Fetch user UPI ID
+      const { data: userData } = await supabase
+        .from('users')
+        .select('upi_id, name')
+        .eq('id', userId)
+        .single();
+
+      const upiId = userData?.upi_id;
+      const userName = userData?.name;
+
+      // 4. Remove from Admin screen list
+      setPendingTasks(prev => prev.filter(t => t.id !== taskId));
+
+      // 5. Open UPI payment
+      if (upiId) {
+        const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(userName)}&am=${refundAmount}&cu=INR`;
+        window.location.href = upiUrl;
+      } else {
+        alert(`Approved! ₹${refundAmount} manually bhejo user ko.`);
+      }
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
+  };
+
+  const handleReject = async (taskId, userId, stakeAmount) => {
+    try {
+      const remaining = stakeAmount - 1;
+      const charityAmount = Math.floor(remaining * 0.6);
+      const profitAmount = remaining - charityAmount;
+
+      // 1. Task ka status 'rejected' update karna
+      const { error: taskError } = await supabase
+        .from('tasks')
+        .update({ status: 'rejected' }) 
+        .eq('id', taskId);
+
+      if (taskError) throw taskError;
+
+      // 2. Charity log mein record insert karna
+      await supabase.from('charity_log').insert([{
         task_id: taskId,
         user_id: userId,
-        status: 'refunded',
-        amount: refundAmount
+        charity_amount: charityAmount,
+        platform_profit: profitAmount
       }]);
-    
-    if (paymentError) throw paymentError;
 
-    // Fetch user UPI ID
-    const { data: userData } = await supabase
-      .from('users')
-      .select('upi_id, name')
-      .eq('id', userId)
-      .single();
-
-    const upiId = userData?.upi_id;
-    const userName = userData?.name;
-
-    // Remove from list
-    setPendingTasks(prev => prev.filter(t => t.id !== taskId));
-
-    // Open UPI payment
-    if (upiId) {
-      const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(userName)}&am=${refundAmount}&cu=INR`;
-      window.location.href = upiUrl;
-    } else {
-      alert(`Approved! ₹${refundAmount} manually bhejo user ko.`);
+      setPendingTasks(pendingTasks.filter(t => t.id !== taskId));
+      alert('Task rejected! Charity logged.');
+    } catch (error) {
+      console.error('Error rejecting task:', error);
+      alert('Error: ' + error.message);
     }
-  } catch (error) {
-    alert('Error: ' + error.message);
-  }
-};
+  };
 
   const handleReject = async (taskId, userId, stakeAmount) => {
     try {
