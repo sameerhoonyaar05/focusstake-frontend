@@ -20,13 +20,15 @@ function App() {
       try {
         const { data, error } = await supabase.auth.getSession();
         if (error) throw error;
+        
         if (data?.session?.user) {
-          // Users table se poora data fetch karo (is_admin bhi)
+          // Users table se is_admin fetch karo
           const { data: userData } = await supabase
             .from('users')
             .select('*')
             .eq('id', data.session.user.id)
             .single();
+          
           setUser({ ...data.session.user, ...userData });
           setCurrentPage('dashboard');
         } else {
@@ -36,27 +38,30 @@ function App() {
         console.error('Auth check error:', error);
         setCurrentPage('login');
       } finally {
-        setLoading(false);
+        setLoading(false);  // ← Ye zaroori hai!
       }
     };
 
     checkUser();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session) {
-        // Users table se poora data fetch karo
-        const { data: userData } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        setUser({ ...session.user, ...userData });
-        setCurrentPage('dashboard');
-      } else {
-        setUser(null);
-        setCurrentPage('login');
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session) {
+          const { data: userData } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          setUser({ ...session.user, ...userData });
+          setCurrentPage('dashboard');
+        } else {
+          setUser(null);
+          setCurrentPage('login');
+        }
+        setLoading(false);  // ← Ye bhi zaroori hai!
       }
-    });
+    );
 
     return () => {
       authListener?.subscription?.unsubscribe();
