@@ -41,10 +41,21 @@ function DashboardPage({ user, setCurrentPage, setCurrentTask, setUser, theme, s
     return Math.max(1, Math.ceil(sec / 60));
   };
 
+const [isAdmin, setIsAdmin] = useState(false);
+
 useEffect(() => {
   if (user?.id) {
     fetchTasks();
     fetchCharityDonated();
+    // Admin status fetch karo
+    supabase
+      .from('users')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.is_admin) setIsAdmin(true);
+      });
   }
 }, [user?.id]);
 
@@ -204,7 +215,7 @@ useEffect(() => {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold">Active Tasks</h1>
             <div className="flex gap-3">
-              {user?.is_admin && <button onClick={() => setCurrentPage('admin')} className="bg-red-600 text-white px-6 py-3 rounded hover:bg-red-700 font-bold">Admin</button>}
+              {isAdmin && <button onClick={() => setCurrentPage('admin')} className="bg-red-600 text-white px-6 py-3 rounded hover:bg-red-700 font-bold">Admin</button>}
               <button onClick={() => setShowCreateForm(!showCreateForm)} className="bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 font-bold">{showCreateForm ? 'Cancel' : 'New Task'}</button>
             </div>
           </div>
