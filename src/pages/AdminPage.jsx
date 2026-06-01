@@ -63,7 +63,7 @@ function AdminPage({ setCurrentPage }) {
       // Step 4: Ab jab aapne manually pay kar diya hai, tab Database mein status badlo
       const { error: updateError } = await supabase
         .from('tasks')
-        .update({ status: 'approved' })
+        .update({ status: 'active' })
         .eq('id', taskId);
 
       if (updateError) throw updateError;
