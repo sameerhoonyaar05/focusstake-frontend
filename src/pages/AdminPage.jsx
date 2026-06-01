@@ -34,7 +34,7 @@ function AdminPage({ setCurrentPage }) {
     // Step 1: Task status update karo
     const { error: updateError } = await supabase
       .from('tasks')
-      .update({ status: 'approved' })
+      .update({ status: 'complete' })
       .eq('id', taskId);
     if (updateError) throw updateError;
 
