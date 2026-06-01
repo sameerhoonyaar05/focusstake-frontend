@@ -30,50 +30,40 @@ function AdminPage({ setCurrentPage }) {
     try {
       const refundAmount = stakeAmount - 1;
 
-      // Step 1: UI se remove karo
+      // Step 1: Database mein task ko 'approved' mark karo
+      const { error: updateError } = await supabase
+        .from('tasks')
+        .update({ status: 'approved' }) // Yahan status 'approved' set ho raha hai
+        .eq('id', taskId);
+
+      if (updateError) throw updateError;
+
+      // Step 2: UI se task ko turant hata do
       setPendingTasks(prev => prev.filter(t => t.id !== taskId));
 
-      // Step 2: User details fetch karo
-      const { data: userData } = await supabase
+      // Step 3: User ki UPI detail nikalo
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('upi_id, name')
         .eq('id', userId)
         .single();
 
-      // Step 3: UPI app open karo
+      if (userError) throw userError;
+
+      // Step 4: UPI ID Copy karo aur Alert dikhao
       if (userData?.upi_id) {
-        const upiUrl = `upi://pay?pa=${userData.upi_id}&pn=${encodeURIComponent(userData.name || 'User')}&am=${refundAmount}&cu=INR&tn=FocusStake+Refund`;
-        window.location.href = upiUrl;
+        navigator.clipboard.writeText(userData.upi_id)
+          .then(() => {
+            alert(`✅ Task Approved (Database Updated)!\n\nUPI ID: ${userData.upi_id} copy ho gayi hai.\nAmount: ₹${refundAmount}\n\nKripya apna PhonePe/GPay khol kar manually pay kar dein.`);
+          })
+          .catch(err => {
+            console.error("Copy fail ho gaya:", err);
+            alert(`✅ Task Approved (Database Updated)!\n\nUPI ID copy nahi ho payi. Kripya manually type karein: ${userData.upi_id}\nAmount: ₹${refundAmount}`);
+          });
+      } else {
+        alert(`✅ Task Approved!\nLekin is user ki UPI ID database mein nahi mili.`);
       }
       
-      alert('✅ Task Approved!\n₹' + refundAmount + ' refund initiated.');
-    } catch (error) {
-      alert('Error: ' + error.message);
-    }
-  };
-
-  const handleReject = async (taskId, userId, stakeAmount) => {
-    try {
-      const remaining = stakeAmount - 1;
-      const charityAmount = Math.floor(remaining * 0.6);
-      const profitAmount = remaining - charityAmount;
-
-      // Update status to failed
-      await supabase
-        .from('tasks')
-        .update({ status: 'failed' })
-        .eq('id', taskId);
-
-      // Add charity log
-      await supabase.from('charity_log').insert([{
-        task_id: taskId,
-        user_id: userId,
-        charity_amount: charityAmount,
-        platform_profit: profitAmount
-      }]);
-
-      setPendingTasks(prev => prev.filter(t => t.id !== taskId));
-      alert('❌ Task Rejected!\n₹' + charityAmount + ' donated to charity.');
     } catch (error) {
       alert('Error: ' + error.message);
     }
