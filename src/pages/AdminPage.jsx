@@ -31,18 +31,10 @@ function AdminPage({ setCurrentPage }) {
   try {
     const refundAmount = stakeAmount - 1;
 
-    // Step 1: Sirf Payment record insert karo
-    const { error: paymentError } = await supabase
-      .from('payments')
-      .insert([{
-        task_id: taskId,
-        user_id: userId,
-        status: 'verified',
-        amount: refundAmount
-      }]);
-    if (paymentError) throw paymentError;
+    // Sirf UI se hata do
+    setPendingTasks(prev => prev.filter(t => t.id !== taskId));
 
-    // Step 2: User ka UPI ID fetch karo
+    // User ka UPI ID fetch karo
     const { data: userData } = await supabase
       .from('users')
       .select('upi_id, name')
@@ -52,15 +44,13 @@ function AdminPage({ setCurrentPage }) {
     const upiId = userData?.upi_id;
     const userName = userData?.name;
 
-    // Step 3: UI se hata do
-    setPendingTasks(prev => prev.filter(t => t.id !== taskId));
-
-    // Step 4: UPI Payment apps open karo
+    // UPI payment open karo
     if (upiId) {
       const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(userName)}&am=${refundAmount}&cu=INR&tn=FocusStake+Refund`;
       window.location.href = upiUrl;
+      alert('Refund initiated! UPI app khul jaana chahiye.');
     } else {
-      alert(`Task approved! ✅\nManually ₹${refundAmount} bhejo user ko.`);
+      alert(`Approved! ✅\nManually ₹${refundAmount} bhejo user ko.`);
     }
 
   } catch (error) {
