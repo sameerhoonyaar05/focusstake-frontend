@@ -11,7 +11,6 @@ function AdminPage({ setCurrentPage }) {
 
   const fetchPendingTasks = async () => {
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
@@ -21,41 +20,64 @@ function AdminPage({ setCurrentPage }) {
       if (error) throw error;
       setPendingTasks(data || []);
     } catch (error) {
-      console.error('Error fetching pending tasks:', error);
+      console.error('Error:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleApprove = async (taskId, userId, stakeAmount) => {
-  try {
-    const refundAmount = stakeAmount - 1;
+    try {
+      const refundAmount = stakeAmount - 1;
 
-    // Step 1: UI se turant hata do
-    setPendingTasks(prev => prev.filter(t => t.id !== taskId));
+      // Step 1: UI se remove karo
+      setPendingTasks(prev => prev.filter(t => t.id !== taskId));
 
-    // Step 2: User UPI details fetch karo
-    const { data: userData } = await supabase
-      .from('users')
-      .select('upi_id, name')
-      .eq('id', userId)
-      .single();
+      // Step 2: User details fetch karo
+      const { data: userData } = await supabase
+        .from('users')
+        .select('upi_id, name')
+        .eq('id', userId)
+        .single();
 
-    const upiId = userData?.upi_id;
-    const userName = userData?.name;
-
-    // Step 3: UPI app open karo
-    if (upiId) {
-      const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(userName)}&am=${refundAmount}&cu=INR&tn=FocusStake+Refund`;
-      window.location.href = upiUrl;
+      // Step 3: UPI app open karo
+      if (userData?.upi_id) {
+        const upiUrl = `upi://pay?pa=${userData.upi_id}&pn=${encodeURIComponent(userData.name || 'User')}&am=${refundAmount}&cu=INR&tn=FocusStake+Refund`;
+        window.location.href = upiUrl;
+      }
+      
+      alert('✅ Task Approved!\n₹' + refundAmount + ' refund initiated.');
+    } catch (error) {
+      alert('Error: ' + error.message);
     }
-    
-    alert('Task Approved! ✅\n₹' + refundAmount + ' transfer ho jaana chahiye.');
+  };
 
-  } catch (error) {
-    alert('Error: ' + error.message);
-  }
-};
+  const handleReject = async (taskId, userId, stakeAmount) => {
+    try {
+      const remaining = stakeAmount - 1;
+      const charityAmount = Math.floor(remaining * 0.6);
+      const profitAmount = remaining - charityAmount;
+
+      // Update status to failed
+      await supabase
+        .from('tasks')
+        .update({ status: 'failed' })
+        .eq('id', taskId);
+
+      // Add charity log
+      await supabase.from('charity_log').insert([{
+        task_id: taskId,
+        user_id: userId,
+        charity_amount: charityAmount,
+        platform_profit: profitAmount
+      }]);
+
+      setPendingTasks(prev => prev.filter(t => t.id !== taskId));
+      alert('❌ Task Rejected!\n₹' + charityAmount + ' donated to charity.');
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -66,13 +88,13 @@ function AdminPage({ setCurrentPage }) {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto mt-6 px-4">
+      <div className="max-w-4xl mx-auto mt-6 px-4 pb-10">
         <h2 className="text-xl font-bold mb-4">Pending Approvals: {pendingTasks.length}</h2>
 
         {loading ? (
           <p>Loading...</p>
         ) : pendingTasks.length === 0 ? (
-          <p className="text-gray-600">No pending tasks for review</p>
+          <p className="text-gray-600">No pending tasks</p>
         ) : (
           <div className="space-y-4">
             {pendingTasks.map((task) => (
