@@ -31,10 +31,10 @@ function AdminPage({ setCurrentPage }) {
   try {
     const refundAmount = stakeAmount - 1;
 
-    // Sirf UI se hata do
+    // Step 1: UI se turant hata do
     setPendingTasks(prev => prev.filter(t => t.id !== taskId));
 
-    // User ka UPI ID fetch karo
+    // Step 2: User UPI details fetch karo
     const { data: userData } = await supabase
       .from('users')
       .select('upi_id, name')
@@ -44,20 +44,18 @@ function AdminPage({ setCurrentPage }) {
     const upiId = userData?.upi_id;
     const userName = userData?.name;
 
-    // UPI payment open karo
+    // Step 3: UPI app open karo
     if (upiId) {
       const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(userName)}&am=${refundAmount}&cu=INR&tn=FocusStake+Refund`;
       window.location.href = upiUrl;
-      alert('Refund initiated! UPI app khul jaana chahiye.');
-    } else {
-      alert(`Approved! ✅\nManually ₹${refundAmount} bhejo user ko.`);
     }
+    
+    alert('Task Approved! ✅\n₹' + refundAmount + ' transfer ho jaana chahiye.');
 
   } catch (error) {
     alert('Error: ' + error.message);
   }
 };
-
 
   return (
     <div className="min-h-screen bg-gray-100">
