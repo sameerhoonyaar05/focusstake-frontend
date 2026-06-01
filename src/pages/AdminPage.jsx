@@ -37,7 +37,7 @@ function AdminPage({ setCurrentPage }) {
       .insert([{
         task_id: taskId,
         user_id: userId,
-        status: 'refunded',
+        status: 'completed',
         amount: refundAmount
       }]);
     if (paymentError) throw paymentError;
