@@ -18,27 +18,17 @@ function App() {
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        
+        const { data } = await supabase.auth.getSession();
         if (data?.session?.user) {
-          // Users table se is_admin fetch karo
-          const { data: userData } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', data.session.user.id)
-            .single();
-          
-          setUser({ ...data.session.user, ...userData });
+          setUser(data.session.user);
           setCurrentPage('dashboard');
         } else {
           setCurrentPage('login');
         }
       } catch (error) {
-        console.error('Auth check error:', error);
         setCurrentPage('login');
       } finally {
-        setLoading(false);  // ← Ye zaroori hai!
+        setLoading(false);
       }
     };
 
@@ -47,19 +37,13 @@ function App() {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (session) {
-          const { data: userData } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          setUser({ ...session.user, ...userData });
+          setUser(session.user);
           setCurrentPage('dashboard');
         } else {
           setUser(null);
           setCurrentPage('login');
         }
-        setLoading(false);  // ← Ye bhi zaroori hai!
+        setLoading(false);
       }
     );
 
@@ -82,8 +66,8 @@ function App() {
         <LoginPage setUser={setUser} setCurrentPage={setCurrentPage} />
       )}
       {currentPage === 'dashboard' && user && (
-        <DashboardPage 
-          user={user} 
+        <DashboardPage
+          user={user}
           setCurrentPage={setCurrentPage}
           setCurrentTask={setCurrentTask}
           setUser={setUser}
