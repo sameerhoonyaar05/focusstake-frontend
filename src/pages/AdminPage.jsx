@@ -30,18 +30,7 @@ function AdminPage({ setCurrentPage }) {
     try {
       const refundAmount = stakeAmount - 1;
 
-      // Step 1: Database mein task ko 'approved' mark karo
-      const { error: updateError } = await supabase
-        .from('tasks')
-        .update({ status: 'approved' })
-        .eq('id', taskId);
-
-      if (updateError) throw updateError;
-
-      // Step 2: UI se task ko turant hata do
-      setPendingTasks(prev => prev.filter(t => t.id !== taskId));
-
-      // Step 3: User ki UPI detail nikalo
+      // Step 1: Pehle User ki UPI detail nikalo (Abhi database update nahi karenge!)
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('upi_id, name')
@@ -50,20 +39,40 @@ function AdminPage({ setCurrentPage }) {
 
       if (userError) throw userError;
 
-      // Step 4: UPI ID Copy karo aur Alert dikhao
-      if (userData?.upi_id) {
-        navigator.clipboard.writeText(userData.upi_id)
-          .then(() => {
-            alert(`✅ Task Approved (Database Updated)!\n\nUPI ID: ${userData.upi_id} copy ho gayi hai.\nAmount: ₹${refundAmount}\n\nKripya apna PhonePe/GPay khol kar manually pay kar dein.`);
-          })
-          .catch(err => {
-            console.error("Copy fail ho gaya:", err);
-            alert(`✅ Task Approved (Database Updated)!\n\nUPI ID copy nahi ho payi. Kripya manually type karein: ${userData.upi_id}\nAmount: ₹${refundAmount}`);
-          });
-      } else {
-        alert(`✅ Task Approved!\nLekin is user ki UPI ID database mein nahi mili.`);
+      if (!userData?.upi_id) {
+        alert(`❌ Is user ki UPI ID database mein nahi mili!`);
+        return;
       }
+
+      // Step 2: UPI ID ko background mein copy kar lo
+      await navigator.clipboard.writeText(userData.upi_id);
+
+      // Step 3: Admin se Confirmation lo (Jab tak aap OK nahi karoge, task list se nahi hatega)
+      const userConfirmed = window.confirm(
+        `📋 UPI ID Copy Ho Gayi Hai!\n\n` +
+        `User Name: ${userData.name}\n` +
+        `UPI ID: ${userData.upi_id}\n` +
+        `Refund Amount: ₹${refundAmount}\n\n` +
+        `👉 Pehle apne PhonePe/GPay mein jaakar manually ₹${refundAmount} pay kar lijiye.\n` +
+        `👉 Successfull payment karne ke baad hi yahan 'OK' dabayein taaki task approve ho sake.`
+      );
+
+      // Agar aapne 'Cancel' dabaya ya abhi pay nahi kiya, toh code yahi ruk jayega (Task safe rahega)
+      if (!userConfirmed) return;
+
+      // Step 4: Ab jab aapne manually pay kar diya hai, tab Database mein status badlo
+      const { error: updateError } = await supabase
+        .from('tasks')
+        .update({ status: 'approved' })
+        .eq('id', taskId);
+
+      if (updateError) throw updateError;
+
+      // Step 5: Sab kuch successfully hone ke baad ab UI se task ko hatao
+      setPendingTasks(prev => prev.filter(t => t.id !== taskId));
       
+      alert('✅ Task successfully approved and closed!');
+
     } catch (error) {
       alert('Error: ' + error.message);
     }
