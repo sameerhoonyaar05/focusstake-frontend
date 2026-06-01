@@ -33,7 +33,7 @@ function AdminPage({ setCurrentPage }) {
       // Step 1: Database mein task ko 'approved' mark karo
       const { error: updateError } = await supabase
         .from('tasks')
-        .update({ status: 'approved' }) // Yahan status 'approved' set ho raha hai
+        .update({ status: 'approved' })
         .eq('id', taskId);
 
       if (updateError) throw updateError;
@@ -64,6 +64,33 @@ function AdminPage({ setCurrentPage }) {
         alert(`✅ Task Approved!\nLekin is user ki UPI ID database mein nahi mili.`);
       }
       
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
+  };
+
+  const handleReject = async (taskId, userId, stakeAmount) => {
+    try {
+      const remaining = stakeAmount - 1;
+      const charityAmount = Math.floor(remaining * 0.6);
+      const profitAmount = remaining - charityAmount;
+
+      // Update status to failed
+      await supabase
+        .from('tasks')
+        .update({ status: 'failed' })
+        .eq('id', taskId);
+
+      // Add charity log
+      await supabase.from('charity_log').insert([{
+        task_id: taskId,
+        user_id: userId,
+        charity_amount: charityAmount,
+        platform_profit: profitAmount
+      }]);
+
+      setPendingTasks(prev => prev.filter(t => t.id !== taskId));
+      alert('❌ Task Rejected!\n₹' + charityAmount + ' donated to charity.');
     } catch (error) {
       alert('Error: ' + error.message);
     }
