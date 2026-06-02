@@ -95,7 +95,7 @@ function ProofPage({ user, task, setCurrentPage }) {
         // All proofs submitted
         await supabase
           .from('tasks')
-          .update({ status: 'completed' })
+          .update({ status: 'pending' })
           .eq('id', task.id);
         
         alert('🎉 All proofs submitted! Task completed.');

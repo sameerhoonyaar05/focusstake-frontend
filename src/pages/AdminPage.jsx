@@ -24,7 +24,7 @@ function AdminPage({ setCurrentPage }) {
           created_at,
           users(name, upi_id)
         `)
-        .eq('status', 'completed')
+        .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -89,7 +89,7 @@ function AdminPage({ setCurrentPage }) {
 
       const { error } = await supabase
         .from('tasks')
-        .update({ status: 'active' })
+        .update({ status: 'approved' })
         .eq('id', taskId);
 
       if (error) throw error;
