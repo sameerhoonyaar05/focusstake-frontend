@@ -12,8 +12,8 @@ function TimerPage({ user, task, setCurrentPage }) {
 
   const totalSeconds = task?.duration_seconds || 0;
   const buffer = Math.floor(totalSeconds / 18);
-  const cp1Time = Math.floor(totalSeconds * (2 / 3));
-  const cp2Time = Math.floor(totalSeconds * (1 / 3));
+  const cp1Time = Math.floor(totalSeconds * (1/3));  // CP1 first (1/3rd mein)
+  const cp2Time = Math.floor(totalSeconds * (2/3)); // CP2 second (2/3rd mein)
 
   // Timer countdown
   useEffect(() => {
