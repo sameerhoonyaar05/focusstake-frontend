@@ -20,9 +20,12 @@ function App() {
       try {
         const { data } = await supabase.auth.getSession();
         if (data?.session?.user) {
-          setUser(data.session.user);
-          setCurrentPage('dashboard');
-        } else {
+  setUser({
+    ...data.session.user,
+    id: data.session.user.id || data.session.user.sub
+  });
+  setCurrentPage('dashboard');
+} else {
           setCurrentPage('login');
         }
       } catch (error) {
