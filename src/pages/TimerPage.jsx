@@ -26,7 +26,7 @@ function TimerPage({ user, task, setCurrentPage }) {
       setIsActive(false);
     }
     return () => clearInterval(interval);
-  }, [isActive, timeLeft]);
+  }, [isActive]);
 
   // Checkpoint window logic
   useEffect(() => {
