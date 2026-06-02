@@ -5,11 +5,19 @@ function TimerPage({ user, task, setCurrentPage }) {
   const [timeLeft, setTimeLeft] = useState(task?.duration_seconds || 0);
   const [isActive, setIsActive] = useState(true);
   const [submittedCPs, setSubmittedCPs] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   const totalSeconds = task?.duration_seconds || 0;
-  const buffer = Math.floor(totalSeconds / 18);
-  const cp1Time = Math.floor(totalSeconds * (1 / 3));  // 1/3rd of time
-  const cp2Time = Math.floor(totalSeconds * (2 / 3));  // 2/3rd of time
+  
+  // 🔥 DYNAMIC ALGORITHM: Sameer's Balanced Buffer Formula
+  const checkpointGap = totalSeconds / 3;
+  const rawBuffer = 0.15 * checkpointGap;
+  // Min 10 seconds, Max 60 seconds, baaki durations ke liye exactly 15% of Gap
+  const buffer = Math.floor(Math.min(60, Math.max(10, rawBuffer))); 
+  
+  const cp1Time = Math.floor(totalSeconds * (1 / 3));  
+  const cp2Time = Math.floor(totalSeconds * (2 / 3));  
 
   // 1. Fetch already submitted proofs from Supabase on mount
   useEffect(() => {
@@ -46,23 +54,86 @@ function TimerPage({ user, task, setCurrentPage }) {
   const cp2Open = elapsed >= cp2Time - buffer && elapsed <= cp2Time + buffer;
   const finalOpen = elapsed >= totalSeconds - buffer && elapsed <= totalSeconds;
 
-  // 4. State Machine Logic helper for UI
+  // State Machine Logic helper for UI
   const getCheckpointStatus = (cpName, isOpen, targetTime) => {
     if (submittedCPs.includes(cpName)) return 'SUBMITTED';
     if (isOpen) return 'OPEN';
-    
-    // Check if window has passed
     const windowClose = cpName === 'final' ? totalSeconds : targetTime + buffer;
     if (elapsed > windowClose) return 'LOCKED';
-    
     return 'UPCOMING';
   };
 
-  // 5. Check if any checkpoint is currently open AND not yet submitted
+  // Check which checkpoint is currently active for upload
   let currentActiveCheckpoint = null;
   if (cp1Open && !submittedCPs.includes('cp1')) currentActiveCheckpoint = 'cp1';
   else if (cp2Open && !submittedCPs.includes('cp2')) currentActiveCheckpoint = 'cp2';
   else if (finalOpen && !submittedCPs.includes('final')) currentActiveCheckpoint = 'final';
+
+  const handleFileSelect = (e) => {
+    setSelectedFile(e.target.files[0]);
+  };
+
+  // 4. Upload Logic
+  const uploadProof = async () => {
+    if (!selectedFile) {
+      alert('Please select a file first!');
+      return;
+    }
+
+    if (!currentActiveCheckpoint) {
+      alert('❌ Window closed! You missed this checkpoint.');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const bucket = 'proofs';
+      const fileName = `${task.id}/${currentActiveCheckpoint}_${Date.now()}`;
+
+      // Storage Upload
+      const { error: uploadError } = await supabase
+        .storage
+        .from(bucket)
+        .upload(fileName, selectedFile);
+
+      if (uploadError) throw uploadError;
+
+      // DB Insert
+      const proofData = {
+        task_id: task.id,
+        user_id: user.id,
+        checkpoint: currentActiveCheckpoint,
+        proof_url: fileName,
+        submitted_at: new Date().toISOString()
+      };
+
+      const { error: dbError } = await supabase
+        .from('proofs')
+        .insert([proofData]);
+
+      if (dbError) throw dbError;
+
+      alert(`✅ ${currentActiveCheckpoint.toUpperCase()} proof submitted successfully!`);
+      setSubmittedCPs(prev => [...prev, currentActiveCheckpoint]);
+      setSelectedFile(null);
+
+      // If final checkpoint is done, finish task
+      if (currentActiveCheckpoint === 'final') {
+        await supabase
+          .from('tasks')
+          .update({ status: 'pending' })
+          .eq('id', task.id);
+        
+        alert('🎉 All done! Task submitted for Admin Review.');
+        setCurrentPage('dashboard');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Upload failed: ' + error.message);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const formatTime = (seconds) => {
     const hours = Math.floor(seconds / 3600);
@@ -71,86 +142,78 @@ function TimerPage({ user, task, setCurrentPage }) {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Helper styles based on 3-States (+ Upcoming)
   const getCardStyle = (status) => {
     switch (status) {
       case 'SUBMITTED': return 'bg-green-100 border-2 border-green-500 text-green-800';
       case 'OPEN': return 'bg-yellow-100 border-2 border-yellow-500 text-yellow-900 animate-pulse';
-      case 'LOCKED': return 'bg-red-100 border-2 border-red-300 text-red-700 opacity-60';
+      case 'LOCKED': return 'bg-red-100 border-2 border-red-200 text-red-700 opacity-60';
       default: return 'bg-gray-100 text-gray-500';
     }
   };
 
   return (
-    <div className="min-h-screen bg-purple-600 flex items-center justify-center">
-      <div className="bg-white rounded-lg p-8 max-w-2xl w-full mx-4 shadow-xl">
-        <h1 className="text-3xl font-bold text-center mb-4">⏱️ {task?.description}</h1>
+    <div className="min-h-screen bg-purple-600 p-4 flex flex-col items-center justify-center">
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-full shadow-xl">
+        <h1 className="text-2xl font-bold text-center mb-2">⏱️ {task?.description}</h1>
         
-        <div className="text-6xl font-bold text-center text-blue-600 mb-8 font-mono">
+        <div className="text-5xl font-bold text-center text-blue-600 mb-4 font-mono">
           {formatTime(timeLeft)}
         </div>
 
-        {/* Checkpoints Status Timeline */}
-        <div className="space-y-3 mb-6">
-          {/* Checkpoint 1 */}
-          <div className={`p-4 rounded transition ${getCardStyle(getCheckpointStatus('cp1', cp1Open, cp1Time))}`}>
-            <p className="font-bold flex justify-between">
-              <span>📸 Checkpoint 1 (1/3rd Time)</span>
-              <span className="font-mono">
-                {getCheckpointStatus('cp1', cp1Open, cp1Time) === 'SUBMITTED' && '✅ SUBMITTED'}
-                {getCheckpointStatus('cp1', cp1Open, cp1Time) === 'OPEN' && '⏳ OPEN NOW'}
-                {getCheckpointStatus('cp1', cp1Open, cp1Time) === 'LOCKED' && '🔒 LOCKED (Missed)'}
-                {getCheckpointStatus('cp1', cp1Open, cp1Time) === 'UPCOMING' && '💤 UPCOMING'}
-              </span>
-            </p>
-            {getCheckpointStatus('cp1', cp1Open, cp1Time) === 'OPEN' && <p className="text-sm text-yellow-800 mt-1 font-semibold">👉 Submit your proof right now!</p>}
-          </div>
-
-          {/* Checkpoint 2 */}
-          <div className={`p-4 rounded transition ${getCardStyle(getCheckpointStatus('cp2', cp2Open, cp2Time))}`}>
-            <p className="font-bold flex justify-between">
-              <span>📸 Checkpoint 2 (2/3rd Time)</span>
-              <span className="font-mono">
-                {getCheckpointStatus('cp2', cp2Open, cp2Time) === 'SUBMITTED' && '✅ SUBMITTED'}
-                {getCheckpointStatus('cp2', cp2Open, cp2Time) === 'OPEN' && '⏳ OPEN NOW'}
-                {getCheckpointStatus('cp2', cp2Open, cp2Time) === 'LOCKED' && '🔒 LOCKED (Missed)'}
-                {getCheckpointStatus('cp2', cp2Open, cp2Time) === 'UPCOMING' && '💤 UPCOMING'}
-              </span>
-            </p>
-            {getCheckpointStatus('cp2', cp2Open, cp2Time) === 'OPEN' && <p className="text-sm text-yellow-800 mt-1 font-semibold">👉 Submit your proof right now!</p>}
-          </div>
-
-          {/* Final Submission */}
-          <div className={`p-4 rounded transition ${getCardStyle(getCheckpointStatus('final', finalOpen, totalSeconds))}`}>
-            <p className="font-bold flex justify-between">
-              <span>🎬 Final Submission (End Time)</span>
-              <span className="font-mono">
-                {getCheckpointStatus('final', finalOpen, totalSeconds) === 'SUBMITTED' && '✅ SUBMITTED'}
-                {getCheckpointStatus('final', finalOpen, totalSeconds) === 'OPEN' && '⏳ OPEN NOW'}
-                {getCheckpointStatus('final', finalOpen, totalSeconds) === 'LOCKED' && '🔒 LOCKED (Missed)'}
-                {getCheckpointStatus('final', finalOpen, totalSeconds) === 'UPCOMING' && '💤 UPCOMING'}
-              </span>
-            </p>
-            {getCheckpointStatus('final', finalOpen, totalSeconds) === 'OPEN' && <p className="text-sm text-blue-800 mt-1 font-semibold">👉 Submit your final task proof video!</p>}
-          </div>
+        {/* Debug Info for Admin/Testing */}
+        <div className="text-center mb-4">
+          <span className="text-xs bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-semibold">
+            ⚙️ Active Buffer: {buffer} seconds
+          </span>
         </div>
 
-        {/* Dynamic Action Button */}
-        <button 
-          onClick={() => {
-            if (currentActiveCheckpoint) {
-              setCurrentPage('proof');
-            }
-          }}
-          disabled={!currentActiveCheckpoint}
-          className="w-full bg-blue-600 text-white py-3 rounded font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed mb-2 uppercase tracking-wide transition"
-        >
-          {currentActiveCheckpoint ? `📤 Upload ${currentActiveCheckpoint.toUpperCase()} Proof` : '⏳ Waiting for an Open Window...'}
-        </button>
+        {/* Checkpoints List */}
+        <div className="space-y-3 mb-6">
+          {['cp1', 'cp2', 'final'].map((cp, idx) => {
+            const isOpen = cp === 'cp1' ? cp1Open : cp === 'cp2' ? cp2Open : finalOpen;
+            const target = cp === 'cp1' ? cp1Time : cp === 'cp2' ? cp2Time : totalSeconds;
+            const status = getCheckpointStatus(cp, isOpen, target);
+            return (
+              <div key={cp} className={`p-3 rounded transition ${getCardStyle(status)}`}>
+                <p className="font-bold flex justify-between text-sm">
+                  <span>📸 Checkpoint {idx + 1}</span>
+                  <span className="font-mono text-xs px-2 py-0.5 rounded bg-white shadow-sm">{status}</span>
+                </p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Live Upload Section */}
+        {currentActiveCheckpoint ? (
+          <div className="bg-blue-50 p-4 rounded-lg border-2 border-blue-400 mb-4">
+            <p className="text-sm font-bold text-blue-800 mb-2 uppercase">
+              🚀 {currentActiveCheckpoint.toUpperCase()} Window is Active!
+            </p>
+            <input 
+              type="file" 
+              accept={currentActiveCheckpoint === 'final' ? 'video/*' : 'image/*'}
+              onChange={handleFileSelect}
+              disabled={uploading}
+              className="w-full text-xs block mb-3 p-1 border rounded bg-white"
+            />
+            <button
+              onClick={uploadProof}
+              disabled={uploading || !selectedFile}
+              className="w-full bg-green-600 text-white py-2 rounded font-bold text-sm hover:bg-green-700 disabled:opacity-50"
+            >
+              {uploading ? '⏳ Uploading...' : `Submit ${currentActiveCheckpoint.toUpperCase()} Proof`}
+            </button>
+          </div>
+        ) : (
+          <div className="bg-gray-100 text-gray-600 text-center py-4 rounded-lg text-sm font-semibold mb-4 border border-dashed border-gray-300">
+            ⏳ Waiting for checkpoint window to open...
+          </div>
+        )}
 
         <button 
           onClick={() => setCurrentPage('dashboard')}
-          className="w-full bg-gray-400 text-white py-3 rounded font-bold hover:bg-gray-500 transition"
+          className="w-full bg-gray-400 text-white py-2 rounded font-bold text-sm hover:bg-gray-500 transition"
         >
           Back to Dashboard
         </button>
